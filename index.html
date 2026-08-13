@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17142b">
+<title>Office Party Games</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;color:#fff;background:#11101b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#17142b,#30205a);min-height:100vh}
+button,input,select{font:inherit}button{border:0;cursor:pointer}
+.app{max-width:560px;margin:auto;min-height:100vh;padding:22px 18px 34px}
+.card{background:rgba(255,255,255,.1);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:20px;margin:12px 0}
+h1{font-size:36px;margin:16px 0 6px}.sub{opacity:.72}.emoji{font-size:58px}
+.game{width:100%;text-align:left;color:#fff;background:rgba(255,255,255,.1);padding:18px;border-radius:18px;margin:10px 0}
+.game b{font-size:20px}.game span{display:block;opacity:.7;margin-top:4px}
+.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}
+label{display:block;font-size:13px;opacity:.7;margin:16px 0 7px}
+input,select{width:100%;padding:13px;border-radius:13px;border:1px solid #ffffff22;background:#ffffff12;color:#fff;outline:none}
+option{color:#111}
+.primary{background:#fff;color:#20183b;padding:14px 18px;border-radius:15px;font-weight:800;width:100%;margin-top:14px}
+.secondary{background:#ffffff16;color:#fff;padding:13px 18px;border-radius:15px;width:100%;margin-top:10px}
+.center{text-align:center}.secret{font-size:42px;font-weight:900;margin:28px 0;word-break:break-word}
+.hint{background:#ffb02022;border:1px solid #ffb02055;padding:14px;border-radius:15px;margin:15px 0}
+.pill{display:inline-block;padding:7px 11px;border-radius:999px;background:#ffffff14;font-size:12px}
+.player{font-size:25px;font-weight:800}.muted{opacity:.65}
+.vote{display:flex;justify-content:space-between;align-items:center;background:#ffffff0e;padding:14px;border-radius:14px;margin:8px 0}
+.vote.selected{outline:2px solid #fff}
+.big{font-size:54px;font-weight:900}.danger{color:#ffb4b4}
+</style>
+</head>
+<body>
+<div id="app" class="app"></div>
+<script>
+const pairs = {
+Food:[
+["Pizza","Burger","A popular casual meal","easy"],["Popcorn","Nachos","Often associated with entertainment","medium"],
+["Pancakes","Waffles","Often enjoyed as a breakfast treat","hard"],["Biryani","Fried Rice","A rice-based dish","medium"],
+["Ice Cream","Cake","Commonly associated with celebrations","easy"],["Samosa","Pakora","A popular tea-time snack","medium"],
+["Dosa","Idli","A South Indian breakfast","easy"],["Noodles","Pasta","Usually served as a main dish","medium"],
+["Sandwich","Wrap","A convenient handheld meal","hard"],["Soup","Stew","Usually served warm","hard"]
+],
+Movies:[
+["Batman","Iron Man","A famous fictional hero","medium"],["Avatar","Titanic","A major cinematic experience","hard"],
+["Comedy","Horror","A movie genre","easy"],["Director","Actor","An important person in filmmaking","medium"],
+["Trailer","Teaser","A short promotional video","hard"],["Villain","Hero","A central character type","easy"]
+],
+Places:[
+["Airport","Railway Station","A place for travel","easy"],["Beach","Swimming Pool","A place where people may swim","medium"],
+["Library","Bookstore","A place connected with books","hard"],["Mountain","Hill","A natural elevated landform","hard"],
+["Restaurant","Cafe","A place where you can eat","medium"],["Museum","Gallery","A place where things are displayed","hard"]
+],
+Office:[
+["Meeting","Presentation","Something that can happen during work","medium"],["Laptop","Desktop","A computer used for work","easy"],
+["Manager","Team Lead","A person with responsibility for others","hard"],["Slack","Teams","A workplace communication platform","hard"],
+["Bug","Feature","Something developers may discuss","medium"],["Coffee","Tea","A common office-break drink","easy"],
+["Deadline","Milestone","A project planning concept","hard"],["Developer","Tester","A software team role","medium"]
+],
+Sports:[
+["Cricket","Baseball","A bat-and-ball sport","medium"],["Football","Rugby","A team sport played on a large field","hard"],
+["Tennis","Badminton","A racket sport","medium"],["Goalkeeper","Defender","A player with a defensive role","hard"]
+],
+Games:[
+["Chess","Checkers","A classic board game","medium"],["Ludo","Snakes and Ladders","A familiar board game","easy"],
+["Minecraft","Roblox","A popular digital game","hard"],["Controller","Keyboard","Something used to play games","medium"]
+],
+Animals:[
+["Dog","Wolf","A four-legged animal","hard"],["Lion","Tiger","A large wild cat","medium"],
+["Dolphin","Shark","An animal associated with the ocean","medium"],["Eagle","Hawk","A bird of prey","hard"]
+],
+Vehicles:[
+["Car","SUV","A road vehicle","easy"],["Scooter","Motorcycle","A two-wheeled vehicle","medium"],
+["Train","Metro","A form of public transport","hard"],["Helicopter","Drone","An aircraft that can fly vertically","hard"]
+],
+Technology:[
+["iPhone","Android Phone","A modern mobile device","medium"],["GitHub","GitLab","A platform used by developers","hard"],
+["Wi-Fi","Bluetooth","A wireless technology","hard"],["Keyboard","Mouse","A computer peripheral","easy"],
+["API","Database","A software development concept","hard"],["Cloud","Server","A computing concept","medium"]
+]};
+
+let state={screen:"home",players:6,names:[],topic:"Random",difficulty:"medium",hint:true,pair:null,imposter:0,current:0,revealed:false,used:[],votes:[],selected:null};
+
+const $=id=>document.getElementById(id);
+function render(){ $("app").innerHTML = views[state.screen](); }
+
+function home(){
+return `<div class="center"><div class="emoji">🎮</div><h1>Office Party Games</h1><div class="sub">Pass the phone. Play together.</div></div>
+<div class="card">
+<button class="game" onclick="setup()"><b>🕵️ Imposter</b><span>Find the player who doesn't belong</span></button>
+<button class="game" onclick="coming('🤥','2 Truths & 1 Lie')"><b>🤥 2 Truths & 1 Lie</b><span>Spot the lie</span></button>
+<button class="game" onclick="coming('🤔','Who Am I?')"><b>🤔 Who Am I?</b><span>Guess your secret identity</span></button>
+</div>
+<div class="card"><div class="pill">Offline-first</div><p class="muted">No login, no room code, no server. One phone is enough.</p></div>`;
+}
+function setup(){
+state.screen="setup"; state.names=Array.from({length:state.players},(_,i)=>state.names[i]||"");
+render();
+}
+function setupView(){
+let names=state.names.map((n,i)=>`<label>Player ${i+1}<input value="${esc(n)}" oninput="state.names[${i}]=this.value" placeholder="Name"></label>`).join("");
+return `<div><button class="secondary" onclick="goHome()">← Back</button><h1>🕵️ Imposter</h1><div class="sub">Set up the round.</div>
+<div class="card"><label>Players: <b>${state.players}</b></label><input type="range" min="3" max="15" value="${state.players}" oninput="state.players=+this.value; state.names=Array.from({length:state.players},(_,i)=>state.names[i]||''); render()">
+<label>Topic</label><select onchange="state.topic=this.value">${["Random",...Object.keys(pairs)].map(x=>`<option ${x==state.topic?"selected":""}>${x}</option>`).join("")}</select>
+<label>Difficulty</label><div class="row">${["easy","medium","hard"].map(x=>`<button class="${state.difficulty==x?"primary":"secondary"}" onclick="state.difficulty='${x}';render()">${x[0].toUpperCase()+x.slice(1)}</button>`).join("")}</div>
+<label class="row" style="margin-top:18px"><span>Give Imposter a hint</span><input style="width:auto;flex:0" type="checkbox" ${state.hint?"checked":""} onchange="state.hint=this.checked"></label>
+</div>
+<div class="card"><b>Player names</b>${names}</div>
+<button class="primary" onclick="startImposter()">Start Game</button></div>`;
+}
+function startImposter(){
+let pool=Object.entries(pairs).flatMap(([topic,arr])=>arr.map(x=>({...x,topic})));
+if(state.topic!=="Random") pool=pool.filter(x=>x.topic===state.topic);
+let filtered=pool.filter(x=>x[3]===state.difficulty); if(!filtered.length) filtered=pool;
+let available=filtered.filter(x=>!state.used.includes(x[0]+"|"+x[1])); if(!available.length){state.used=[];available=filtered}
+state.pair=available[Math.floor(Math.random()*available.length)];
+state.used.push(state.pair[0]+"|"+state.pair[1]);
+state.imposter=Math.floor(Math.random()*state.players); state.current=0; state.revealed=false;
+state.screen="pass";render();
+}
+function passView(){
+let name=state.names[state.current]||`Player ${state.current+1}`;
+if(!state.revealed)return `<div class="center"><div class="pill">PASS THE PHONE</div><h1 class="player">${esc(name)}</h1><p class="muted">Tap only when this player is ready. Keep the secret hidden from everyone else.</p><button class="primary" onclick="state.revealed=true;render()">Reveal Secret</button></div>`;
+let imp=state.current===state.imposter;
+return `<div class="center"><div class="pill">${state.current+1} / ${state.players}</div>
+<div class="emoji">${imp?"🕵️":"🔐"}</div><h2>${imp?"YOU ARE THE IMPOSTER":"YOUR WORD"}</h2>
+<div class="secret">${imp?"IMPOSTER":esc(state.pair[0])}</div>
+${imp&&state.hint?`<div class="hint">💡 Hint: ${esc(state.pair[2])}</div>`:""}
+${imp&&!state.hint?`<p class="danger">No hint. Good luck 😈</p>`:""}
+<button class="primary" onclick="nextSecret()">${state.current+1<state.players?"Hide & Pass":"Finish Secret Setup"}</button></div>`;
+}
+function nextSecret(){if(state.current+1<state.players){state.current++;state.revealed=false;render()}else{state.screen="play";render()}}
+function playView(){return `<div class="center"><div class="emoji">🕵️</div><h1>Discuss!</h1><div class="big" id="timer">03:00</div><p class="muted">Give clues without making your word too obvious. Find the Imposter.</p><button class="primary" onclick="startTimer()">Start 3-Minute Timer</button><button class="secondary" onclick="vote()">Vote Now</button></div>`}
+let timerInterval=null;
+function startTimer(){if(timerInterval)return;let t=180; timerInterval=setInterval(()=>{t--;let el=$("timer");if(el)el.textContent=`${String(Math.floor(t/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`;if(t<=0){clearInterval(timerInterval);timerInterval=null;vote()}},1000)}
+function vote(){if(timerInterval){clearInterval(timerInterval);timerInterval=null}state.votes=[];state.selected=null;state.screen="vote";render()}
+function voteView(){return `<div><button class="secondary" onclick="state.screen='play';render()">← Back</button><h1>🗳️ Vote</h1><p class="muted">Discuss, then select who you think is the Imposter.</p>${state.names.map((n,i)=>`<button class="vote ${state.selected===i?"selected":""}" onclick="state.selected=${i};render()"><span>${esc(n||`Player ${i+1}`)}</span><span>${state.selected===i?"✓":"○"}</span></button>`).join("")}<button class="primary" ${state.selected===null?"disabled":""} onclick="state.screen='result';render()">Reveal</button></div>`}
+function resultView(){let correct=state.selected===state.imposter;return `<div class="center"><div class="emoji">${correct?"🎉":"😈"}</div><h1>${correct?"Caught!":"Fooled You!"}</h1><div class="secret">${esc(state.names[state.imposter]||`Player ${state.imposter+1}`)}</div><p>${correct?"The team found the Imposter.":"The Imposter survived the vote."}</p><button class="primary" onclick="startImposter()">Play Another Round</button><button class="secondary" onclick="goHome()">Back to Games</button></div>`}
+function coming(icon,title){state.screen="coming";state.coming=[icon,title];render()}
+function comingView(){return `<div class="center"><button class="secondary" onclick="goHome()">← Back</button><div class="emoji">${state.coming[0]}</div><h1>${state.coming[1]}</h1><p class="muted">Coming next. The Imposter game is the first playable MVP.</p></div>`}
+function goHome(){state.screen="home";render()}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+const views={home,setup:setupView,pass:passView,play:playView,vote:voteView,result:resultView,coming:comingView};
+render();
+</script>
+</body>
+</html>
